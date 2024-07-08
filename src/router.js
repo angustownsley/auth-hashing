@@ -10,8 +10,10 @@ const router = express.Router()
 router.post('/register', async (req, res) => {
     const { username, password } = req.body
 
-    if(!username || !password) {
-        return res.status(400).send({error:"Missing fields in the request body"})
+    if (!username || !password) {
+        return res
+            .status(400)
+            .send({ error: 'Missing fields in the request body' })
     }
     const userExists = await prisma.user.findUnique({
         where: { username: username },
@@ -43,7 +45,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).send({ error: 'Password incorrect' })
         }
 
-        const token = await jwt.sign(username, secret)
+        const token = await jwt.sign({ username }, secret)
 
         return res.status(201).send({ token })
     } catch (e) {
@@ -52,6 +54,17 @@ router.post('/login', async (req, res) => {
         }
 
         return res.status(500).send({ error: e.message })
+    }
+})
+
+router.get('/profile', (req, res) => {
+    const parsedAuth = req.headers.authorization.replace('Bearer ', '')
+
+    try {
+        const isValid = jwt.verify(parsedAuth, secret)
+        return res.send({ isValid:true, username:isValid.username})
+    } catch (e) {
+        return res.status(401).send({ error: 'Access Forbidden' })
     }
 })
 
